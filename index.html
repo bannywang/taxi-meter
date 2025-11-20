@@ -1,394 +1,874 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#2c3e50">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="theme-color" content="#2c3e50" />
     <title>計程車跳表 V6.0</title>
-    
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="apple-touch-icon" href="icon.png">
-    <link rel="icon" href="favicon.ico">
+
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <link rel="apple-touch-icon" href="icon.png" />
+    <link rel="icon" href="favicon.ico" />
 
     <style>
-        /* --- 基礎樣式 --- */
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 0; background: #f0f2f5; padding-bottom: 90px; overscroll-behavior-y: none; user-select: none; -webkit-user-select: none; }
-        
-        .container { max-width: 600px; margin: 0 auto; background: white; min-height: 100vh; display: flex; flex-direction: column; position: relative; }
-        
-        /* 頂部與設定 */
-        .settings-box { padding: 15px; padding-top: env(safe-area-inset-top, 20px); background: #2c3e50; color: white; display: flex; gap: 10px; align-items: center; }
-        .rate-select-group { flex-grow: 1; }
-        .rate-select-group label { display: block; font-size: 12px; color: #bdc3c7; margin-bottom: 4px; }
-        select { width: 100%; padding: 10px; border-radius: 6px; border: none; font-size: 16px; background: #fff; }
-        .btn-manage { background: #34495e; color: white; border: 1px solid #95a5a6; padding: 10px; border-radius: 6px; cursor: pointer; white-space: nowrap;}
+      /* --- 基礎樣式 --- */
+      * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        margin: 0;
+        padding: 0;
+        background: #f0f2f5;
+        padding-bottom: 90px;
+        overscroll-behavior-y: none;
+        user-select: none;
+        -webkit-user-select: none;
+      }
 
-        /* 儀表板 */
-        .dashboard { padding: 15px; text-align: center; background: #fff; border-bottom: 1px solid #eee; }
-        .status-bar { font-size: 14px; margin-bottom: 10px; padding: 8px; border-radius: 6px; background: #eee; color: #666; }
-        .status-bar.ready { background: #d5f5e3; color: #27ae60; font-weight: bold; }
-        .status-bar.running { background: #fadbd8; color: #c0392b; }
-        
-        .price-display { font-size: 60px; font-weight: 800; color: #e74c3c; margin: 5px 0; line-height: 1; letter-spacing: -2px; }
-        
-        .multiplier-area { margin: 10px 0; display: inline-flex; align-items: center; background: #f8f9fa; padding: 5px 15px; border-radius: 20px; border: 1px solid #ddd; }
-        .multiplier-input { width: 60px; padding: 5px; text-align: center; border: none; background: transparent; font-size: 20px; font-weight: bold; color: #2980b9; outline: none; }
-        
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-        .stat-item { background: #f8f9fa; padding: 10px; border-radius: 8px; }
-        .stat-value { font-size: 22px; font-weight: bold; color: #2c3e50; }
-        
-        #map { height: 35vh; width: 100%; background: #ddd; z-index: 0;}
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        background: white;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+      }
 
-        /* 底部按鈕 */
-        .controls { padding: 15px; display: flex; gap: 10px; position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid #eee; padding-bottom: calc(15px + env(safe-area-inset-bottom)); z-index: 100; max-width: 600px; margin: 0 auto; }
-        .btn { flex: 1; padding: 15px; border: none; border-radius: 12px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .btn:active { transform: scale(0.98); }
-        .btn:disabled { background: #bdc3c7 !important; cursor: not-allowed; opacity: 0.7; }
-        .btn-start { background: #27ae60; color: white; }
-        .btn-stop { background: #c0392b; color: white; display: none; }
-        .btn-reset { background: #95a5a6; color: white; }
+      /* 頂部與設定 */
+      .settings-box {
+        padding: 15px;
+        padding-top: env(safe-area-inset-top, 20px);
+        background: #2c3e50;
+        color: white;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+      .rate-select-group {
+        flex-grow: 1;
+      }
+      .rate-select-group label {
+        display: block;
+        font-size: 12px;
+        color: #bdc3c7;
+        margin-bottom: 4px;
+      }
+      select {
+        width: 100%;
+        padding: 10px;
+        border-radius: 6px;
+        border: none;
+        font-size: 16px;
+        background: #fff;
+      }
+      .btn-manage {
+        background: #34495e;
+        color: white;
+        border: 1px solid #95a5a6;
+        padding: 10px;
+        border-radius: 6px;
+        cursor: pointer;
+        white-space: nowrap;
+      }
 
-        /* 歷史紀錄列表 */
-        .history-section { padding: 20px; background: #fff; padding-bottom: 100px; }
-        .history-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; color: #2c3e50; display: flex; justify-content: space-between; align-items: center;}
-        .history-list { list-style: none; padding: 0; margin: 0; }
-        .history-item { border-left: 4px solid #3498db; background: #f8f9fa; padding: 12px 15px; margin-bottom: 10px; border-radius: 0 8px 8px 0; }
-        .h-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        .h-price { font-size: 20px; font-weight: bold; color: #e74c3c; }
-        .h-tag { font-size: 10px; background: #3498db; color: white; padding: 2px 5px; border-radius: 3px; margin-left: 5px;}
-        .h-actions { display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #eee; padding-top: 8px; }
-        .btn-map-view { font-size: 14px; padding: 5px 12px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 5px;}
-        
-        /* Modal 通用樣式 */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(2px); }
-        .modal-content { background: white; width: 90%; max-width: 400px; padding: 20px; border-radius: 12px; max-height: 80vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.2); display: flex; flex-direction: column;}
-        .modal-header { font-size: 20px; font-weight: bold; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;}
-        .modal-close { cursor: pointer; font-size: 28px; color: #999; padding: 0 10px; line-height: 1;}
+      /* 儀表板 */
+      .dashboard {
+        padding: 15px;
+        text-align: center;
+        background: #fff;
+        border-bottom: 1px solid #eee;
+      }
+      .status-bar {
+        font-size: 14px;
+        margin-bottom: 10px;
+        padding: 8px;
+        border-radius: 6px;
+        background: #eee;
+        color: #666;
+      }
+      .status-bar.ready {
+        background: #d5f5e3;
+        color: #27ae60;
+        font-weight: bold;
+      }
+      .status-bar.running {
+        background: #fadbd8;
+        color: #c0392b;
+      }
 
-        /* 路線地圖專用 */
-        #historyMapContainer { width: 100%; height: 300px; background: #eee; border-radius: 8px; margin-bottom: 10px; }
-        
-        /* 費率管理樣式 */
-        .form-group { margin-bottom: 10px; }
-        .form-group label { display: block; font-size: 14px; margin-bottom: 3px; color: #666; }
-        .form-group input { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 6px; font-size: 16px; }
-        .btn-add { width: 100%; padding: 12px; background: #3498db; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        .rate-list { margin-top: 20px; border-top: 1px solid #eee; padding-top: 10px; }
-        .rate-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+      .price-display {
+        font-size: 60px;
+        font-weight: 800;
+        color: #e74c3c;
+        margin: 5px 0;
+        line-height: 1;
+        letter-spacing: -2px;
+      }
 
+      .multiplier-area {
+        margin: 10px 0;
+        display: inline-flex;
+        align-items: center;
+        background: #f8f9fa;
+        padding: 5px 15px;
+        border-radius: 20px;
+        border: 1px solid #ddd;
+      }
+      .multiplier-input {
+        width: 60px;
+        padding: 5px;
+        text-align: center;
+        border: none;
+        background: transparent;
+        font-size: 20px;
+        font-weight: bold;
+        color: #2980b9;
+        outline: none;
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 10px;
+      }
+      .stat-item {
+        background: #f8f9fa;
+        padding: 10px;
+        border-radius: 8px;
+      }
+      .stat-value {
+        font-size: 22px;
+        font-weight: bold;
+        color: #2c3e50;
+      }
+
+      #map {
+        height: 35vh;
+        width: 100%;
+        background: #ddd;
+        z-index: 0;
+      }
+
+      /* 底部按鈕 */
+      .controls {
+        padding: 15px;
+        display: flex;
+        gap: 10px;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: white;
+        border-top: 1px solid #eee;
+        padding-bottom: calc(15px + env(safe-area-inset-bottom));
+        z-index: 100;
+        max-width: 600px;
+        margin: 0 auto;
+      }
+      .btn {
+        flex: 1;
+        padding: 15px;
+        border: none;
+        border-radius: 12px;
+        font-size: 18px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: 0.2s;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+      .btn:active {
+        transform: scale(0.98);
+      }
+      .btn:disabled {
+        background: #bdc3c7 !important;
+        cursor: not-allowed;
+        opacity: 0.7;
+      }
+      .btn-start {
+        background: #27ae60;
+        color: white;
+      }
+      .btn-stop {
+        background: #c0392b;
+        color: white;
+        display: none;
+      }
+      .btn-reset {
+        background: #95a5a6;
+        color: white;
+      }
+
+      /* 歷史紀錄列表 */
+      .history-section {
+        padding: 20px;
+        background: #fff;
+        padding-bottom: 100px;
+      }
+      .history-title {
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 15px;
+        color: #2c3e50;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .history-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+      .history-item {
+        border-left: 4px solid #3498db;
+        background: #f8f9fa;
+        padding: 12px 15px;
+        margin-bottom: 10px;
+        border-radius: 0 8px 8px 0;
+      }
+      .h-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+      .h-price {
+        font-size: 20px;
+        font-weight: bold;
+        color: #e74c3c;
+      }
+      .h-tag {
+        font-size: 10px;
+        background: #3498db;
+        color: white;
+        padding: 2px 5px;
+        border-radius: 3px;
+        margin-left: 5px;
+      }
+      .h-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        border-top: 1px solid #eee;
+        padding-top: 8px;
+      }
+      .btn-map-view {
+        font-size: 14px;
+        padding: 5px 12px;
+        background: #27ae60;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      /* Modal 通用樣式 */
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 2000;
+        display: none;
+        justify-content: center;
+        align-items: center;
+        backdrop-filter: blur(2px);
+      }
+      .modal-content {
+        background: white;
+        width: 90%;
+        max-width: 400px;
+        padding: 20px;
+        border-radius: 12px;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        display: flex;
+        flex-direction: column;
+      }
+      .modal-header {
+        font-size: 20px;
+        font-weight: bold;
+        margin-bottom: 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0;
+      }
+      .modal-close {
+        cursor: pointer;
+        font-size: 28px;
+        color: #999;
+        padding: 0 10px;
+        line-height: 1;
+      }
+
+      /* 路線地圖專用 */
+      #historyMapContainer {
+        width: 100%;
+        height: 300px;
+        background: #eee;
+        border-radius: 8px;
+        margin-bottom: 10px;
+      }
+
+      /* 費率管理樣式 */
+      .form-group {
+        margin-bottom: 10px;
+      }
+      .form-group label {
+        display: block;
+        font-size: 14px;
+        margin-bottom: 3px;
+        color: #666;
+      }
+      .form-group input {
+        width: 100%;
+        padding: 10px;
+        box-sizing: border-box;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 16px;
+      }
+      .btn-add {
+        width: 100%;
+        padding: 12px;
+        background: #3498db;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+      }
+      .rate-list {
+        margin-top: 20px;
+        border-top: 1px solid #eee;
+        padding-top: 10px;
+      }
+      .rate-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 0;
+        border-bottom: 1px solid #f0f0f0;
+      }
     </style>
-</head>
-<body>
-
-<div class="container">
-    <div class="settings-box" id="settingsArea">
+  </head>
+  <body>
+    <div class="container">
+      <div class="settings-box" id="settingsArea">
         <div class="rate-select-group">
-            <label>費率方案</label>
-            <select id="rateSelect"></select>
+          <label>費率方案</label>
+          <select id="rateSelect"></select>
         </div>
-        <button class="btn-manage" onclick="openModal('rateModal')">設定</button>
-    </div>
+        <button class="btn-manage" onclick="openModal('rateModal')">
+          設定
+        </button>
+      </div>
 
-    <div class="dashboard">
-        <div id="gpsStatus" class="status-bar locating">正在搜尋 GPS 訊號...</div>
+      <div class="dashboard">
+        <div id="gpsStatus" class="status-bar locating">
+          正在搜尋 GPS 訊號...
+        </div>
         <div class="price-label">目前車資</div>
         <div class="price-display">$<span id="totalPrice">0.00</span></div>
         <div class="multiplier-area">
-            <label>✖ 倍率:</label>
-            <input 
-                type="number" 
-                id="multiplier" 
-                class="multiplier-input" 
-                value="1.0" 
-                step="0.1" 
-                min="0" 
-                inputmode="decimal"
-                onkeypress="return (event.charCode >= 48 && event.charCode <= 57) || event.charCode == 46"
-                oninput="updateDisplay()"
-            >
+          <label>✖ 倍率:</label>
+          <input
+            type="number"
+            id="multiplier"
+            class="multiplier-input"
+            value="1.0"
+            step="0.1"
+            min="0"
+            inputmode="decimal"
+            onkeypress="return (event.charCode >= 48 && event.charCode <= 57) || event.charCode == 46"
+            oninput="updateDisplay()"
+          />
         </div>
         <div class="stats-grid">
-            <div class="stat-item"><div class="stat-value"><span id="distDisplay">0.00</span> km</div><div class="stat-label">行駛距離</div></div>
-            <div class="stat-item"><div class="stat-value"><span id="timeDisplay">00:00</span></div><div class="stat-label">行駛時間</div></div>
+          <div class="stat-item">
+            <div class="stat-value"><span id="distDisplay">0.00</span> km</div>
+            <div class="stat-label">行駛距離</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value"><span id="timeDisplay">00:00</span></div>
+            <div class="stat-label">行駛時間</div>
+          </div>
         </div>
-    </div>
+      </div>
 
-    <div id="map"></div>
+      <div id="map"></div>
 
-    <div class="history-section">
+      <div class="history-section">
         <div class="history-title">
-            📜 行程紀錄
-            <button style="font-size:12px;padding:5px;background:#bdc3c7;border:none;color:white;border-radius:4px;" onclick="clearHistory()">清空</button>
+          📜 行程紀錄
+          <button
+            style="
+              font-size: 12px;
+              padding: 5px;
+              background: #bdc3c7;
+              border: none;
+              color: white;
+              border-radius: 4px;
+            "
+            onclick="clearHistory()"
+          >
+            清空
+          </button>
         </div>
         <ul class="history-list" id="historyList"></ul>
+      </div>
+
+      <div class="controls">
+        <button
+          class="btn btn-start"
+          id="startBtn"
+          onclick="startMeter()"
+          disabled
+        >
+          等待 GPS...
+        </button>
+        <button class="btn btn-stop" id="stopBtn" onclick="stopMeter()">
+          結束計費
+        </button>
+        <button class="btn btn-reset" id="resetBtn" onclick="resetMeter()">
+          重置
+        </button>
+      </div>
     </div>
 
-    <div class="controls">
-        <button class="btn btn-start" id="startBtn" onclick="startMeter()" disabled>等待 GPS...</button>
-        <button class="btn btn-stop" id="stopBtn" onclick="stopMeter()">結束計費</button>
-        <button class="btn btn-reset" onclick="resetMeter()">重置</button>
-    </div>
-</div>
-
-<div id="rateModal" class="modal-overlay">
-    <div class="modal-content">
-        <div class="modal-header"><span>管理費率</span><span class="modal-close" onclick="closeModal('rateModal')">&times;</span></div>
-        <div style="background: #f9f9f9; padding: 15px; border-radius: 8px;">
-            <div class="form-group"><label>名稱</label><input type="text" id="newRateName" placeholder="輸入名稱..."></div>
-            <div style="display:flex; gap:5px;">
-                <div class="form-group" style="flex:1"><label>起跳</label><input type="number" id="newRateBase" placeholder="85"></div>
-                <div class="form-group" style="flex:1"><label>每km</label><input type="number" id="newRateKm" placeholder="25"></div>
-                <div class="form-group" style="flex:1"><label>每min</label><input type="number" id="newRateMin" placeholder="5"></div>
+    <div id="rateModal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <span>管理費率</span
+          ><span class="modal-close" onclick="closeModal('rateModal')"
+            >&times;</span
+          >
+        </div>
+        <div style="background: #f9f9f9; padding: 15px; border-radius: 8px">
+          <div class="form-group">
+            <label>名稱</label
+            ><input type="text" id="newRateName" placeholder="輸入名稱..." />
+          </div>
+          <div style="display: flex; gap: 5px">
+            <div class="form-group" style="flex: 1">
+              <label>起跳</label
+              ><input type="number" id="newRateBase" placeholder="85" />
             </div>
-            <button class="btn-add" onclick="addNewRate()">+ 新增</button>
+            <div class="form-group" style="flex: 1">
+              <label>每km</label
+              ><input type="number" id="newRateKm" placeholder="25" />
+            </div>
+            <div class="form-group" style="flex: 1">
+              <label>每min</label
+              ><input type="number" id="newRateMin" placeholder="5" />
+            </div>
+          </div>
+          <button class="btn-add" onclick="addNewRate()">+ 新增</button>
         </div>
         <div class="rate-list" id="rateListDisplay"></div>
+      </div>
     </div>
-</div>
 
-<div id="routeModal" class="modal-overlay">
-    <div class="modal-content" style="max-width: 500px; height: 80vh;">
-        <div class="modal-header"><span>🚩 歷史路線圖</span><span class="modal-close" onclick="closeModal('routeModal')">&times;</span></div>
-        <div id="historyMapContainer"></div>
-        <div style="padding:10px; background:#f8f9fa; border-radius:8px; font-size:14px; line-height:1.6;">
-            <strong>行程資訊：</strong><br>
-            <span id="routeModalInfo">載入中...</span>
+    <div id="routeModal" class="modal-overlay">
+      <div class="modal-content" style="max-width: 500px; height: 80vh">
+        <div class="modal-header">
+          <span>🚩 歷史路線圖</span
+          ><span class="modal-close" onclick="closeModal('routeModal')"
+            >&times;</span
+          >
         </div>
+        <div id="historyMapContainer"></div>
+        <div
+          style="
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 14px;
+            line-height: 1.6;
+          "
+        >
+          <strong>行程資訊：</strong><br />
+          <span id="routeModalInfo">載入中...</span>
+        </div>
+      </div>
     </div>
-</div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script>
-    // --- 變數 ---
-    let map, userMarker, pathLine, watchId, timerId;
-    let isRunning = false, hasLocation = false, isFirstRunPoint = true; 
-    let totalDistance = 0, totalSeconds = 0;
-    let lastLat = null, lastLng = null;
-    let pathCoordinates = []; // 這陣列會被存起來
-    let rateProfiles = [], currentRate = {};
-    
-    // 歷史地圖專用變數
-    let historyMap = null; 
-    let historyPolyline = null;
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+      // --- 變數 ---
+      let map, userMarker, pathLine, watchId, timerId;
+      let isRunning = false,
+        hasLocation = false,
+        isFirstRunPoint = true;
+      let totalDistance = 0,
+        totalSeconds = 0;
+      let lastLat = null,
+        lastLng = null;
+      let pathCoordinates = []; // 這陣列會被存起來
+      let rateProfiles = [],
+        currentRate = {};
 
-    // --- 初始化 ---
-    function init() {
+      // 歷史地圖專用變數
+      let historyMap = null;
+      let historyPolyline = null;
+
+      // --- 初始化 ---
+      function init() {
         initMap();
         loadRateProfiles();
         loadHistory();
         startGPS();
-    }
+      }
 
-    // --- 費率系統 ---
-    function loadRateProfiles() {
-        const saved = localStorage.getItem('taxi_rate_profiles');
+      // --- 費率系統 ---
+      function loadRateProfiles() {
+        const saved = localStorage.getItem("taxi_rate_profiles");
         if (saved) rateProfiles = JSON.parse(saved);
         else {
-            rateProfiles = [{ id: Date.now(), name: "一般時段", base: 85, km: 25, min: 5 }];
-            saveRatesToStorage();
+          rateProfiles = [
+            { id: Date.now(), name: "一般時段", base: 85, km: 25, min: 5 },
+          ];
+          saveRatesToStorage();
         }
-        renderRateSelect(); renderRateList();
-    }
-    function saveRatesToStorage() { localStorage.setItem('taxi_rate_profiles', JSON.stringify(rateProfiles)); }
-    function addNewRate() {
-        const name = document.getElementById('newRateName').value;
-        const base = parseFloat(document.getElementById('newRateBase').value);
-        const km = parseFloat(document.getElementById('newRateKm').value);
-        const min = parseFloat(document.getElementById('newRateMin').value);
-        if (!name || isNaN(base)) { alert("資料不完整"); return; }
+        renderRateSelect();
+        renderRateList();
+      }
+      function saveRatesToStorage() {
+        localStorage.setItem(
+          "taxi_rate_profiles",
+          JSON.stringify(rateProfiles)
+        );
+      }
+      function addNewRate() {
+        const name = document.getElementById("newRateName").value;
+        const base = parseFloat(document.getElementById("newRateBase").value);
+        const km = parseFloat(document.getElementById("newRateKm").value);
+        const min = parseFloat(document.getElementById("newRateMin").value);
+        if (!name || isNaN(base)) {
+          alert("資料不完整");
+          return;
+        }
         rateProfiles.push({ id: Date.now(), name, base, km, min });
         saveRatesToStorage();
-        document.getElementById('newRateName').value = "";
-        renderRateSelect(); renderRateList();
-        document.getElementById('rateSelect').value = rateProfiles[rateProfiles.length-1].id;
-    }
-    function deleteRate(id) {
-        if (rateProfiles.length <= 1) { alert("最少保留一組"); return; }
-        if (confirm("刪除此費率？")) {
-            rateProfiles = rateProfiles.filter(r => r.id !== id);
-            saveRatesToStorage(); renderRateSelect(); renderRateList();
+        document.getElementById("newRateName").value = "";
+        renderRateSelect();
+        renderRateList();
+        document.getElementById("rateSelect").value =
+          rateProfiles[rateProfiles.length - 1].id;
+      }
+      function deleteRate(id) {
+        if (rateProfiles.length <= 1) {
+          alert("最少保留一組");
+          return;
         }
-    }
-    function renderRateSelect() {
-        const select = document.getElementById('rateSelect'); select.innerHTML = "";
-        rateProfiles.forEach(r => {
-            const opt = document.createElement('option'); opt.value = r.id; opt.text = `${r.name} ($${r.base}起)`; select.appendChild(opt);
+        if (confirm("刪除此費率？")) {
+          rateProfiles = rateProfiles.filter((r) => r.id !== id);
+          saveRatesToStorage();
+          renderRateSelect();
+          renderRateList();
+        }
+      }
+      function renderRateSelect() {
+        const select = document.getElementById("rateSelect");
+        select.innerHTML = "";
+        rateProfiles.forEach((r) => {
+          const opt = document.createElement("option");
+          opt.value = r.id;
+          opt.text = `${r.name} ($${r.base}起)`;
+          select.appendChild(opt);
         });
-    }
-    function renderRateList() {
-        const list = document.getElementById('rateListDisplay'); list.innerHTML = "";
-        rateProfiles.forEach(r => {
-            const div = document.createElement('div'); div.className = 'rate-item';
-            div.innerHTML = `<div><strong>${r.name}</strong><br><span style="font-size:12px;color:#888">$${r.base} | $${r.km}/km | $${r.min}/min</span></div><div style="color:red;cursor:pointer" onclick="deleteRate(${r.id})">🗑️</div>`;
-            list.appendChild(div);
+      }
+      function renderRateList() {
+        const list = document.getElementById("rateListDisplay");
+        list.innerHTML = "";
+        rateProfiles.forEach((r) => {
+          const div = document.createElement("div");
+          div.className = "rate-item";
+          div.innerHTML = `<div><strong>${r.name}</strong><br><span style="font-size:12px;color:#888">$${r.base} | $${r.km}/km | $${r.min}/min</span></div><div style="color:red;cursor:pointer" onclick="deleteRate(${r.id})">🗑️</div>`;
+          list.appendChild(div);
         });
-    }
+      }
 
-    // --- Modal 控制 ---
-    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+      // --- Modal 控制 ---
+      function openModal(id) {
+        document.getElementById(id).style.display = "flex";
+      }
+      function closeModal(id) {
+        document.getElementById(id).style.display = "none";
+      }
 
-    // --- 計費邏輯 ---
-    function startMeter() {
+      // --- 計費邏輯 ---
+      function startMeter() {
+        // 1. 檢查是否有定位
         if (!hasLocation) return;
-        const selectedId = parseInt(document.getElementById('rateSelect').value);
-        currentRate = rateProfiles.find(r => r.id === selectedId);
-        
-        document.getElementById('settingsArea').style.pointerEvents = 'none'; document.getElementById('settingsArea').style.opacity = '0.5';
-        document.getElementById('startBtn').style.display = 'none'; document.getElementById('stopBtn').style.display = 'block';
-        document.getElementById('gpsStatus').innerText = `🚕 ${currentRate.name} 計費中...`; document.getElementById('gpsStatus').className = "status-bar running";
-        
-        // 重置路徑資料
-        pathCoordinates = []; 
+
+        // 2. 取得當前選擇的費率
+        const selectedId = parseInt(
+          document.getElementById("rateSelect").value
+        );
+        currentRate = rateProfiles.find((r) => r.id === selectedId);
+
+        // 3. 鎖定設定區塊
+        document.getElementById("settingsArea").style.pointerEvents = "none";
+        document.getElementById("settingsArea").style.opacity = "0.5";
+
+        // 4. 切換按鈕狀態
+        document.getElementById("startBtn").style.display = "none";
+        document.getElementById("stopBtn").style.display = "block";
+
+        // ★★★ 新增：計費時鎖定重置按鈕 (防呆) ★★★
+        document.getElementById("resetBtn").disabled = true;
+
+        // 5. 更新狀態文字
+        document.getElementById(
+          "gpsStatus"
+        ).innerText = `🚕 ${currentRate.name} 計費中...`;
+        document.getElementById("gpsStatus").className = "status-bar running";
+
+        // 6. 重置路徑資料 (確保是新的軌跡)
+        pathCoordinates = [];
         pathLine.setLatLngs([]);
 
-        isRunning = true; isFirstRunPoint = true;
-        timerId = setInterval(() => { totalSeconds++; updateDisplay(); }, 1000);
-    }
-    function calculatePrice() {
+        // 7. 啟動計時器
+        isRunning = true;
+        isFirstRunPoint = true;
+        timerId = setInterval(() => {
+          totalSeconds++;
+          updateDisplay();
+        }, 1000);
+      }
+      function calculatePrice() {
         if (!currentRate.base) return "0.00";
-        const total = (currentRate.base + (totalDistance * currentRate.km) + ((totalSeconds/60) * currentRate.min));
-        const mult = parseFloat(document.getElementById('multiplier').value) || 1.0;
+        const total =
+          currentRate.base +
+          totalDistance * currentRate.km +
+          (totalSeconds / 60) * currentRate.min;
+        const mult =
+          parseFloat(document.getElementById("multiplier").value) || 1.0;
         return (total * mult).toFixed(2);
-    }
-    function updateDisplay() {
-        const m = Math.floor(totalSeconds/60).toString().padStart(2,'0');
-        const s = (totalSeconds%60).toString().padStart(2,'0');
-        document.getElementById('timeDisplay').innerText = `${m}:${s}`;
-        document.getElementById('distDisplay').innerText = totalDistance.toFixed(2);
-        document.getElementById('totalPrice').innerText = calculatePrice();
-    }
-    function stopMeter() {
-        isRunning = false; clearInterval(timerId);
-        document.getElementById('stopBtn').innerText = "已結束"; document.getElementById('stopBtn').disabled = true;
-        document.getElementById('gpsStatus').innerText = "🏁 行程結束"; document.getElementById('multiplier').disabled = true;
+      }
+      function updateDisplay() {
+        const m = Math.floor(totalSeconds / 60)
+          .toString()
+          .padStart(2, "0");
+        const s = (totalSeconds % 60).toString().padStart(2, "0");
+        document.getElementById("timeDisplay").innerText = `${m}:${s}`;
+        document.getElementById("distDisplay").innerText =
+          totalDistance.toFixed(2);
+        document.getElementById("totalPrice").innerText = calculatePrice();
+      }
+      function stopMeter() {
+        // 1. 停止狀態與計時器
+        isRunning = false;
+        clearInterval(timerId);
+
+        // 2. 更新結束按鈕狀態
+        document.getElementById("stopBtn").innerText = "已結束";
+        document.getElementById("stopBtn").disabled = true;
+
+        // ★★★ 新增：結束後解鎖重置按鈕 ★★★
+        document.getElementById("resetBtn").disabled = false;
+
+        // 3. 更新狀態與鎖定倍率輸入
+        document.getElementById("gpsStatus").innerText = "🏁 行程結束";
+        document.getElementById("multiplier").disabled = true;
+
+        // 4. 計算最終金額並儲存
         const p = calculatePrice();
-        saveRecord(p); // 儲存
+        saveRecord(p);
+
+        // 5. 跳出通知
         alert(`總金額: $${p}`);
-    }
+      }
 
-    // --- 地圖與 GPS ---
-    function initMap() {
-        map = L.map('map', {zoomControl: false}).setView([25.0330, 121.5654], 15);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-        pathLine = L.polyline([], {color: 'blue', weight: 5}).addTo(map);
-    }
-    function startGPS() {
-        if (!navigator.geolocation) { alert("無 GPS"); return; }
-        watchId = navigator.geolocation.watchPosition(handlePositionUpdate, console.warn, { enableHighAccuracy: true });
-    }
-    function handlePositionUpdate(pos) {
-        const lat = pos.coords.latitude; const lng = pos.coords.longitude;
+      // --- 地圖與 GPS ---
+      function initMap() {
+        map = L.map("map", { zoomControl: false }).setView(
+          [25.033, 121.5654],
+          15
+        );
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(
+          map
+        );
+        pathLine = L.polyline([], { color: "blue", weight: 5 }).addTo(map);
+      }
+      function startGPS() {
+        if (!navigator.geolocation) {
+          alert("無 GPS");
+          return;
+        }
+        watchId = navigator.geolocation.watchPosition(
+          handlePositionUpdate,
+          console.warn,
+          { enableHighAccuracy: true }
+        );
+      }
+      function handlePositionUpdate(pos) {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
         if (!hasLocation) {
-            hasLocation = true;
-            document.getElementById('gpsStatus').innerText = "✅ GPS 已就緒"; document.getElementById('gpsStatus').className = "status-bar ready";
-            document.getElementById('startBtn').disabled = false; document.getElementById('startBtn').innerText = "開始計費";
-            userMarker = L.marker([lat, lng]).addTo(map); map.setView([lat, lng], 17);
+          hasLocation = true;
+          document.getElementById("gpsStatus").innerText = "✅ GPS 已就緒";
+          document.getElementById("gpsStatus").className = "status-bar ready";
+          document.getElementById("startBtn").disabled = false;
+          document.getElementById("startBtn").innerText = "開始計費";
+          userMarker = L.marker([lat, lng]).addTo(map);
+          map.setView([lat, lng], 17);
         }
-        if (userMarker) { userMarker.setLatLng([lat, lng]); if (isRunning) map.setView([lat, lng]); }
+        if (userMarker) {
+          userMarker.setLatLng([lat, lng]);
+          if (isRunning) map.setView([lat, lng]);
+        }
         if (isRunning) {
-            // 如果是開始後的第一個點
-            if (isFirstRunPoint) { 
-                lastLat = lat; lastLng = lng; isFirstRunPoint = false; 
-                pathCoordinates.push([lat, lng]); // 記錄起點
-                return; 
-            }
-            
-            const dist = calculateDistance(lastLat, lastLng, lat, lng);
-            if (dist*1000 > 5) { 
-                totalDistance += dist; 
-                lastLat = lat; lastLng = lng; 
-                
-                // 核心：將座標加入陣列
-                pathCoordinates.push([lat, lng]); 
-                pathLine.setLatLngs(pathCoordinates); 
-                
-                updateDisplay(); 
-            }
-        }
-    }
-    function calculateDistance(lat1, lon1, lat2, lon2) {
-        const R = 6371; 
-        const dLat = (lat2 - lat1) * Math.PI / 180; const dLon = (lon2 - lon1) * Math.PI / 180;
-        const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
-        return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
-    }
-    function resetMeter() { location.reload(); }
+          // 如果是開始後的第一個點
+          if (isFirstRunPoint) {
+            lastLat = lat;
+            lastLng = lng;
+            isFirstRunPoint = false;
+            pathCoordinates.push([lat, lng]); // 記錄起點
+            return;
+          }
 
-    // --- 歷史紀錄 & 軌跡重播 (核心更新) ---
-    function saveRecord(p) {
+          const dist = calculateDistance(lastLat, lastLng, lat, lng);
+          if (dist * 1000 > 5) {
+            totalDistance += dist;
+            lastLat = lat;
+            lastLng = lng;
+
+            // 核心：將座標加入陣列
+            pathCoordinates.push([lat, lng]);
+            pathLine.setLatLngs(pathCoordinates);
+
+            updateDisplay();
+          }
+        }
+      }
+      function calculateDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371;
+        const dLat = ((lat2 - lat1) * Math.PI) / 180;
+        const dLon = ((lon2 - lon1) * Math.PI) / 180;
+        const a =
+          Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos((lat1 * Math.PI) / 180) *
+            Math.cos((lat2 * Math.PI) / 180) *
+            Math.sin(dLon / 2) *
+            Math.sin(dLon / 2);
+        return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+      }
+      function resetMeter() {
+        location.reload();
+      }
+
+      // --- 歷史紀錄 & 軌跡重播 (核心更新) ---
+      function saveRecord(p) {
         const now = new Date();
-        const mult = document.getElementById('multiplier').value;
-        
+        const mult = document.getElementById("multiplier").value;
+
         // 這裡我們把 pathCoordinates (整個軌跡陣列) 存進去
         // 為了避免資料太大，我們只存座標，不存多餘資訊
-        const record = { 
-            id: now.getTime(), 
-            t: now.toLocaleString('zh-TW',{hour12:false}), 
-            p: p, 
-            d: totalDistance.toFixed(2), 
-            du: document.getElementById('timeDisplay').innerText, 
-            r: currentRate.name + (mult!=1?` (x${mult})`:''),
-            path: [...pathCoordinates] // 複製一份路徑資料
+        const record = {
+          id: now.getTime(),
+          t: now.toLocaleString("zh-TW", { hour12: false }),
+          p: p,
+          d: totalDistance.toFixed(2),
+          du: document.getElementById("timeDisplay").innerText,
+          r: currentRate.name + (mult != 1 ? ` (x${mult})` : ""),
+          path: [...pathCoordinates], // 複製一份路徑資料
         };
 
-        let h = JSON.parse(localStorage.getItem('taxi_history')) || [];
+        let h = JSON.parse(localStorage.getItem("taxi_history")) || [];
         h.unshift(record);
-        
+
         // 簡單限制：只保留最近 50 筆，避免手機儲存爆掉
         if (h.length > 50) h.pop();
 
-        localStorage.setItem('taxi_history', JSON.stringify(h));
+        localStorage.setItem("taxi_history", JSON.stringify(h));
         renderHistoryList(h);
-    }
-    function loadHistory() { renderHistoryList(JSON.parse(localStorage.getItem('taxi_history')) || []); }
-    
-    function renderHistoryList(data) {
-        const list = document.getElementById('historyList'); list.innerHTML = "";
-        if (data.length === 0) { list.innerHTML = "<li style='padding:10px;color:#999;text-align:center;'>無紀錄</li>"; return; }
-        
-        data.forEach(i => {
-            // 判斷這筆紀錄有沒有路徑資料 (舊的可能沒有)
-            const hasPath = i.path && i.path.length > 0;
-            const mapBtn = hasPath 
-                ? `<button class="btn-map-view" onclick="showRoute(${i.id})">🗺️ 查看路線</button>` 
-                : `<span style="font-size:12px;color:#aaa;">無路線資料</span>`;
+      }
+      function loadHistory() {
+        renderHistoryList(
+          JSON.parse(localStorage.getItem("taxi_history")) || []
+        );
+      }
 
-            list.innerHTML += `
+      function renderHistoryList(data) {
+        const list = document.getElementById("historyList");
+        list.innerHTML = "";
+        if (data.length === 0) {
+          list.innerHTML =
+            "<li style='padding:10px;color:#999;text-align:center;'>無紀錄</li>";
+          return;
+        }
+
+        data.forEach((i) => {
+          // 判斷這筆紀錄有沒有路徑資料 (舊的可能沒有)
+          const hasPath = i.path && i.path.length > 0;
+          const mapBtn = hasPath
+            ? `<button class="btn-map-view" onclick="showRoute(${i.id})">🗺️ 查看路線</button>`
+            : `<span style="font-size:12px;color:#aaa;">無路線資料</span>`;
+
+          list.innerHTML += `
                 <li class="history-item">
                     <div class="h-top">
-                        <span style="font-weight:bold;">${i.t}<span class="h-tag">${i.r||'一般'}</span></span>
+                        <span style="font-weight:bold;">${
+                          i.t
+                        }<span class="h-tag">${i.r || "一般"}</span></span>
                         <div class="h-price">$${i.p}</div>
                     </div>
-                    <div style="font-size:13px;color:#666;margin-bottom:5px;">行駛距離: ${i.d} km | 時間: ${i.du}</div>
+                    <div style="font-size:13px;color:#666;margin-bottom:5px;">行駛距離: ${
+                      i.d
+                    } km | 時間: ${i.du}</div>
                     <div class="h-actions">
                         ${mapBtn}
                     </div>
                 </li>`;
         });
-    }
+      }
 
-    function clearHistory() { if(confirm("清空所有紀錄？")) { localStorage.removeItem('taxi_history'); renderHistoryList([]); } }
+      function clearHistory() {
+        if (confirm("清空所有紀錄？")) {
+          localStorage.removeItem("taxi_history");
+          renderHistoryList([]);
+        }
+      }
 
-    // --- 顯示歷史軌跡功能 ---
-    function showRoute(id) {
-        const history = JSON.parse(localStorage.getItem('taxi_history')) || [];
-        const record = history.find(item => item.id === id);
-        
+      // --- 顯示歷史軌跡功能 ---
+      function showRoute(id) {
+        const history = JSON.parse(localStorage.getItem("taxi_history")) || [];
+        const record = history.find((item) => item.id === id);
+
         if (!record || !record.path || record.path.length === 0) {
-            alert("無法讀取路線資料");
-            return;
+          alert("無法讀取路線資料");
+          return;
         }
 
         // 1. 開啟 Modal
-        openModal('routeModal');
-        
+        openModal("routeModal");
+
         // 2. 更新文字資訊
-        document.getElementById('routeModalInfo').innerHTML = `
+        document.getElementById("routeModalInfo").innerHTML = `
             時間：${record.t}<br>
             車資：<span style="color:#e74c3c;font-weight:bold">$${record.p}</span><br>
             里程：${record.d} km
@@ -396,29 +876,39 @@
 
         // 3. 初始化或更新地圖 (稍微延遲一下，等 Modal 動畫跑完，避免地圖破圖)
         setTimeout(() => {
-            if (!historyMap) {
-                // 第一次打開，建立地圖
-                historyMap = L.map('historyMapContainer').setView([25.0330, 121.5654], 13);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(historyMap);
-            } else {
-                // 之後打開，確保地圖大小正確 (Fix Leaflet render bug in hidden div)
-                historyMap.invalidateSize();
-            }
+          if (!historyMap) {
+            // 第一次打開，建立地圖
+            historyMap = L.map("historyMapContainer").setView(
+              [25.033, 121.5654],
+              13
+            );
+            L.tileLayer(
+              "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            ).addTo(historyMap);
+          } else {
+            // 之後打開，確保地圖大小正確 (Fix Leaflet render bug in hidden div)
+            historyMap.invalidateSize();
+          }
 
-            // 清除舊的線
-            if (historyPolyline) {
-                historyMap.removeLayer(historyPolyline);
-            }
+          // 清除舊的線
+          if (historyPolyline) {
+            historyMap.removeLayer(historyPolyline);
+          }
 
-            // 畫新的線
-            historyPolyline = L.polyline(record.path, {color: 'red', weight: 5}).addTo(historyMap);
-            
-            // 讓地圖自動縮放去涵蓋整條路線
-            historyMap.fitBounds(historyPolyline.getBounds(), {padding: [20, 20]});
+          // 畫新的線
+          historyPolyline = L.polyline(record.path, {
+            color: "red",
+            weight: 5,
+          }).addTo(historyMap);
+
+          // 讓地圖自動縮放去涵蓋整條路線
+          historyMap.fitBounds(historyPolyline.getBounds(), {
+            padding: [20, 20],
+          });
         }, 200);
-    }
-    
-    init();
-</script>
-</body>
+      }
+
+      init();
+    </script>
+  </body>
 </html>
