@@ -439,20 +439,20 @@
   </head>
   <body>
     <div id="lockScreen" class="lock-screen">
-      <div class="lock-icon">🔒</div>
-      <div class="lock-title">付費啟用版本</div>
+      <div class="lock-icon">👋</div>
+      <div class="lock-title">計程車跳表 (測試版)</div>
       <div class="lock-desc">
-        本程式為付費軟體。<br />
-        請聯繫管理員取得啟用碼以解鎖使用。<br />
-        (LINE ID: your_id)
+        歡迎協助測試！<br />
+        請輸入測試碼開始使用。<br />
+        (測試期間完全免費)
       </div>
       <input
         type="text"
         id="activationCode"
         class="lock-input"
-        placeholder="輸入啟用碼"
+        placeholder="輸入: 1234"
       />
-      <button class="btn-unlock" onclick="checkActivation()">解鎖</button>
+      <button class="btn-unlock" onclick="checkActivation()">開始測試</button>
       <div
         id="errorMsg"
         style="
@@ -462,7 +462,7 @@
           display: none;
         "
       >
-        無效的啟用碼
+        測試碼錯誤
       </div>
     </div>
 
@@ -634,7 +634,7 @@
       let historyPolyline = null;
 
       // 4. 收費鎖定變數
-      const VALID_CODES = ["8888", "TAXI520"]; // 在這裡設定你的密碼
+      const VALID_CODES = ["1234", "0857"]; // 在這裡設定你的密碼
       const STORAGE_KEY_ACTIVATED = "taxi_is_activated";
 
       // --- 初始化流程 ---
