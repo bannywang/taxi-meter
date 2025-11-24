@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>計程車跳表 V8.1</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="apple-touch-icon" href="icon.png" />
+    <link rel="icon" href="favicon.ico" />
+  </head>
+  <body>
+    <div id="lockScreen" class="lock-screen">
+      <div style="font-size: 60px; margin-bottom: 20px">👋</div>
+      <div style="font-size: 24px; font-weight: bold; margin-bottom: 10px">
+        計程車跳表 (測試版)
+      </div>
+      <div style="font-size: 14px; color: #bdc3c7; margin-bottom: 30px">
+        請輸入測試碼：1234
+      </div>
+      <input
+        type="text"
+        id="activationCode"
+        class="lock-input"
+        placeholder="1234"
+      />
+      <button class="btn-unlock" onclick="checkActivation()">開始測試</button>
+      <div
+        id="errorMsg"
+        style="
+          color: #e74c3c;
+          margin-top: 10px;
+          font-weight: bold;
+          display: none;
+        "
+      >
+        測試碼錯誤
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="settings-box" id="settingsArea">
+        <div class="rate-select-group">
+          <label>費率方案</label
+          ><select id="rateSelect"></select>
+        </div>
+        <button class="btn-manage" onclick="openModal('rateModal')">
+          設定
+        </button>
+      </div>
+      <div class="dashboard">
+        <div id="gpsStatus" class="status-bar locating">
+          正在搜尋 GPS 訊號...
+        </div>
+        <div class="price-label">目前車資</div>
+        <div class="price-display">$<span id="totalPrice">0.00</span></div>
+        <div class="multiplier-area">
+          <label>✖ 倍率:</label>
+          <input
+            type="number"
+            id="multiplier"
+            class="multiplier-input"
+            value="1.0"
+            step="0.1"
+            min="0"
+            inputmode="decimal"
+            onkeypress="return (event.charCode >= 48 && event.charCode <= 57) || event.charCode == 46"
+            oninput="updateDisplay()"
+          />
+        </div>
+        <div class="stats-grid">
+          <div class="stat-item">
+            <div class="stat-value"><span id="distDisplay">0.00</span> km</div>
+            <div class="stat-label">行駛距離</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value"><span id="timeDisplay">00:00</span></div>
+            <div class="stat-label">行駛時間</div>
+          </div>
+        </div>
+      </div>
+      <div id="map"></div>
+      <div class="history-section">
+        <div class="history-title">
+          📜 行程紀錄
+          <button
+            style="
+              font-size: 12px;
+              padding: 5px;
+              background: #bdc3c7;
+              border: none;
+              color: white;
+              border-radius: 4px;
+            "
+            onclick="clearHistory()"
+          >
+            清空
+          </button>
+        </div>
+        <ul class="history-list" id="historyList"></ul>
+      </div>
+      <div class="controls">
+        <button
+          class="btn btn-start"
+          id="startBtn"
+          onclick="startMeter()"
+          disabled
+        >
+          等待 GPS...
+        </button>
+        <button class="btn btn-stop" id="stopBtn" onclick="stopMeter()">
+          結束計費
+        </button>
+        <button class="btn btn-reset" id="resetBtn" onclick="resetMeter()">
+          重置
+        </button>
+      </div>
+    </div>
+
+    <div id="rateModal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <span>管理費率</span
+          ><span class="modal-close" onclick="closeModal('rateModal')"
+            >&times;</span
+          >
+        </div>
+        <div style="background: #f9f9f9; padding: 15px; border-radius: 8px">
+          <div class="form-group">
+            <label>名稱</label><input type="text" id="newRateName" />
+          </div>
+          <div style="display: flex; gap: 5px">
+            <div class="form-group">
+              <label>起跳</label><input type="number" id="newRateBase" />
+            </div>
+            <div class="form-group">
+              <label>每km</label><input type="number" id="newRateKm" />
+            </div>
+            <div class="form-group">
+              <label>每min</label><input type="number" id="newRateMin" />
+            </div>
+          </div>
+          <button class="btn-add" onclick="addNewRate()">+ 新增</button>
+        </div>
+        <div class="rate-list" id="rateListDisplay"></div>
+      </div>
+    </div>
+
+    <div id="routeModal" class="modal-overlay">
+      <div class="modal-content" style="max-width: 500px; height: 80vh">
+        <div class="modal-header">
+          <span>🚩 歷史路線圖</span
+          ><span class="modal-close" onclick="closeModal('routeModal')"
+            >&times;</span
+          >
+        </div>
+        <div id="historyMapContainer"></div>
+        <div
+          style="
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 14px;
+            line-height: 1.6;
+          "
+          id="routeModalInfo"
+        ></div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script type="module" src="js/main.js"></script>
+  </body>
+</html>
