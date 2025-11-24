@@ -16,6 +16,9 @@ let totalDistance = 0,
   totalSeconds = 0,
   startTime = 0,
   wakeLock = null;
+// 修改：currentLat/Lng 用來隨時記錄最新位置，lastLat/Lng 用來計算距離
+let currentLat = null,
+  currentLng = null;
 let lastLat = null,
   lastLng = null;
 let pathCoordinates = [];
@@ -24,7 +27,7 @@ let rateProfiles = [],
 let historyMap = null,
   historyPolyline = null;
 
-// 設定測試碼 (你可以改這裡)
+// 設定測試碼
 const VALID_CODES = ["1234", "TEST"];
 const STORAGE_KEY_ACTIVATED = "taxi_is_activated";
 
@@ -32,7 +35,7 @@ const STORAGE_KEY_ACTIVATED = "taxi_is_activated";
 async function init() {
   await initDB();
   console.log("檢查過期資料...");
-  await cleanOldData(); // 啟動清理
+  await cleanOldData();
 
   checkIfActivated();
   initMapModule("map");
@@ -40,13 +43,12 @@ async function init() {
   loadHistory();
 }
 
-// V8.1: 清理邏輯
+// 清理邏輯
 async function cleanOldData() {
   const daysToKeep = 7;
   const deletedCount = await deleteOldPaths(daysToKeep);
   if (deletedCount > 0) console.log(`已清理 ${deletedCount} 筆過期資料`);
 
-  // 同步清理 localStorage
   let history = JSON.parse(localStorage.getItem("taxi_history")) || [];
   const now = Date.now();
   const oneWeekMs = daysToKeep * 24 * 60 * 60 * 1000;
@@ -58,19 +60,27 @@ async function cleanOldData() {
 
 // --- 核心功能 ---
 function startMeter() {
-  if (!hasLocation) return;
+  if (!hasLocation || currentLat === null) return alert("尚未取得定位"); // 防呆
+
   currentRate = rateProfiles.find(
     (r) => r.id === parseInt(document.getElementById("rateSelect").value)
   );
 
   toggleUI(true);
+
   pathCoordinates = [];
   resetMapLine();
   totalDistance = 0;
 
+  // ★★★ V8.2 修正：按下開始時，立刻把當前位置當作起點存入 ★★★
+  // 這樣就算原地不動，也會有一個點，地圖就不會亂跑
+  pathCoordinates.push([currentLat, currentLng]);
+  lastLat = currentLat;
+  lastLng = currentLng;
+
   requestWakeLock();
   isRunning = true;
-  isFirstRunPoint = true;
+  isFirstRunPoint = false; // 設定 false，因為我們已經手動加了第一點
   startTime = Date.now();
   timerId = setInterval(updateDisplay, 1000);
 }
@@ -123,6 +133,11 @@ function startGPS() {
 function handlePositionUpdate(pos) {
   const lat = pos.coords.latitude;
   const lng = pos.coords.longitude;
+
+  // ★★★ V8.2 修正：隨時記錄當前位置，不管有沒有在計費 ★★★
+  currentLat = lat;
+  currentLng = lng;
+
   if (!hasLocation) {
     hasLocation = true;
     document.getElementById("gpsStatus").innerText = "✅ GPS 已就緒";
@@ -136,17 +151,10 @@ function handlePositionUpdate(pos) {
   updateMapMarker(lat, lng, isRunning);
 
   if (isRunning) {
-    if (isFirstRunPoint) {
-      lastLat = lat;
-      lastLng = lng;
-      isFirstRunPoint = false;
-      pathCoordinates.push([lat, lng]);
-      return;
-    }
-
+    // 計算距離 (與上一次記錄的點比較)
     const dist = calculateDistance(lastLat, lastLng, lat, lng);
 
-    // ★ V8.1 修改：移動超過 3 公尺才計算 ★
+    // 移動超過 3 公尺才計算並畫線
     if (dist * 1000 >= 3) {
       totalDistance += dist;
       lastLat = lat;
@@ -175,6 +183,7 @@ function calculatePrice() {
   ).toFixed(2);
 }
 
+// --- 輔助功能 ---
 async function requestWakeLock() {
   try {
     if ("wakeLock" in navigator)
@@ -188,7 +197,6 @@ function releaseWakeLock() {
   }
 }
 
-// --- 輔助功能 ---
 function checkIfActivated() {
   if (localStorage.getItem(STORAGE_KEY_ACTIVATED) === "true") {
     document.getElementById("lockScreen").style.display = "none";
@@ -275,7 +283,6 @@ function saveRecord(p) {
   };
   let h = JSON.parse(localStorage.getItem("taxi_history")) || [];
   h.unshift(record);
-  // 不再限制 50 筆，改由日期自動刪除
   localStorage.setItem("taxi_history", JSON.stringify(h));
   renderHistoryList(h);
   savePathToDB(recordId, pathCoordinates);
@@ -321,6 +328,7 @@ async function showRoute(id) {
     document.getElementById(
       "routeModalInfo"
     ).innerHTML = `日期：${record.t}<br>耗時：${record.du}<br>車資：<span style="color:#e74c3c;font-weight:bold">$${record.p}</span><br>里程：${record.d} km`;
+
     setTimeout(() => {
       if (!historyMap) {
         historyMap = L.map("historyMapContainer").setView(
@@ -334,15 +342,25 @@ async function showRoute(id) {
         historyMap.invalidateSize();
       }
       if (historyPolyline) historyMap.removeLayer(historyPolyline);
+
+      // ★★★ V8.2 修正：如果只有 1 個點（原地不動），就畫一個 Marker 並且置中 ★★★
       if (path && path.length > 0) {
         historyPolyline = L.polyline(path, { color: "red", weight: 5 }).addTo(
           historyMap
         );
-        historyMap.fitBounds(historyPolyline.getBounds(), {
-          padding: [20, 20],
-        });
+
+        if (path.length === 1) {
+          // 只有一個點，直接設為中心
+          historyMap.setView(path[0], 17);
+        } else {
+          // 有多個點，縮放至涵蓋範圍
+          historyMap.fitBounds(historyPolyline.getBounds(), {
+            padding: [20, 20],
+          });
+        }
       } else {
-        document.getElementById("routeModalInfo").innerHTML += "<br>(無路徑)";
+        document.getElementById("routeModalInfo").innerHTML +=
+          "<br>(無路徑資料)";
       }
     }, 200);
   } catch (err) {
