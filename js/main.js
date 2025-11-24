@@ -1,3 +1,4 @@
+// js/main.js
 import { calculateDistance, formatTime } from "./utils.js";
 import { initDB, savePathToDB, getPathFromDB, deleteOldPaths } from "./db.js";
 import {
@@ -16,7 +17,6 @@ let totalDistance = 0,
   totalSeconds = 0,
   startTime = 0,
   wakeLock = null;
-// 修改：currentLat/Lng 用來隨時記錄最新位置，lastLat/Lng 用來計算距離
 let currentLat = null,
   currentLng = null;
 let lastLat = null,
@@ -39,7 +39,7 @@ async function init() {
 
   checkIfActivated();
   initMapModule("map");
-  loadRateProfiles();
+  loadRateProfiles(); // 這裡會載入你的新費率
   loadHistory();
 }
 
@@ -60,7 +60,7 @@ async function cleanOldData() {
 
 // --- 核心功能 ---
 function startMeter() {
-  if (!hasLocation || currentLat === null) return alert("尚未取得定位"); // 防呆
+  if (!hasLocation || currentLat === null) return alert("尚未取得定位");
 
   currentRate = rateProfiles.find(
     (r) => r.id === parseInt(document.getElementById("rateSelect").value)
@@ -72,15 +72,14 @@ function startMeter() {
   resetMapLine();
   totalDistance = 0;
 
-  // ★★★ V8.2 修正：按下開始時，立刻把當前位置當作起點存入 ★★★
-  // 這樣就算原地不動，也會有一個點，地圖就不會亂跑
+  // 初始化起點
   pathCoordinates.push([currentLat, currentLng]);
   lastLat = currentLat;
   lastLng = currentLng;
 
   requestWakeLock();
   isRunning = true;
-  isFirstRunPoint = false; // 設定 false，因為我們已經手動加了第一點
+  isFirstRunPoint = false;
   startTime = Date.now();
   timerId = setInterval(updateDisplay, 1000);
 }
@@ -96,6 +95,7 @@ function stopMeter() {
   alert(`總金額: $${p}`);
 }
 
+// ★★★ 修改重點：顯示費率名稱 ★★★
 function toggleUI(running) {
   const s = document.getElementById("settingsArea");
   const start = document.getElementById("startBtn");
@@ -110,7 +110,8 @@ function toggleUI(running) {
     start.style.display = "none";
     stop.style.display = "block";
     reset.disabled = true;
-    status.innerText = `🚕 計費中...`;
+    // 修改這裡：加入 currentRate.name
+    status.innerText = `🚕 ${currentRate.name} 計費中...`;
     status.className = "status-bar running";
   } else {
     stop.innerText = "已結束";
@@ -133,8 +134,6 @@ function startGPS() {
 function handlePositionUpdate(pos) {
   const lat = pos.coords.latitude;
   const lng = pos.coords.longitude;
-
-  // ★★★ V8.2 修正：隨時記錄當前位置，不管有沒有在計費 ★★★
   currentLat = lat;
   currentLng = lng;
 
@@ -151,10 +150,7 @@ function handlePositionUpdate(pos) {
   updateMapMarker(lat, lng, isRunning);
 
   if (isRunning) {
-    // 計算距離 (與上一次記錄的點比較)
     const dist = calculateDistance(lastLat, lastLng, lat, lng);
-
-    // 移動超過 3 公尺才計算並畫線
     if (dist * 1000 >= 3) {
       totalDistance += dist;
       lastLat = lat;
@@ -217,13 +213,33 @@ function checkActivation() {
   }
 }
 
+// ★★★ 修改重點：更新預設費率列表 ★★★
 function loadRateProfiles() {
-  rateProfiles = JSON.parse(localStorage.getItem("taxi_rate_profiles")) || [
-    { id: Date.now(), name: "一般時段", base: 85, km: 25, min: 5 },
-  ];
+  // 先嘗試從 localStorage 讀取
+  let storedRates = localStorage.getItem("taxi_rate_profiles");
+
+  // 如果沒有存過，或者使用者想要強制更新預設值，我們就使用新的列表
+  // 這裡我們設定：如果 local storage 是空的，就寫入這 8 組
+  if (!storedRates) {
+    rateProfiles = [
+      { id: 1, name: "50/20/2", base: 50, km: 20, min: 2 },
+      { id: 2, name: "70/20/2", base: 70, km: 20, min: 2 },
+      { id: 3, name: "80/20/2", base: 80, km: 20, min: 2 },
+      { id: 4, name: "85/25/3", base: 85, km: 25, min: 3 },
+      { id: 5, name: "90/20/2", base: 90, km: 20, min: 2 },
+      { id: 6, name: "100/20/2", base: 100, km: 20, min: 2 },
+      { id: 7, name: "120/20/2", base: 120, km: 20, min: 2 },
+      { id: 8, name: "130/20/2", base: 130, km: 20, min: 2 },
+    ];
+    saveRatesToStorage(); // 存入 localStorage
+  } else {
+    rateProfiles = JSON.parse(storedRates);
+  }
+
   renderRateSelect();
   renderRateList();
 }
+
 function saveRatesToStorage() {
   localStorage.setItem("taxi_rate_profiles", JSON.stringify(rateProfiles));
 }
@@ -328,7 +344,6 @@ async function showRoute(id) {
     document.getElementById(
       "routeModalInfo"
     ).innerHTML = `日期：${record.t}<br>耗時：${record.du}<br>車資：<span style="color:#e74c3c;font-weight:bold">$${record.p}</span><br>里程：${record.d} km`;
-
     setTimeout(() => {
       if (!historyMap) {
         historyMap = L.map("historyMapContainer").setView(
@@ -342,25 +357,17 @@ async function showRoute(id) {
         historyMap.invalidateSize();
       }
       if (historyPolyline) historyMap.removeLayer(historyPolyline);
-
-      // ★★★ V8.2 修正：如果只有 1 個點（原地不動），就畫一個 Marker 並且置中 ★★★
       if (path && path.length > 0) {
         historyPolyline = L.polyline(path, { color: "red", weight: 5 }).addTo(
           historyMap
         );
-
-        if (path.length === 1) {
-          // 只有一個點，直接設為中心
-          historyMap.setView(path[0], 17);
-        } else {
-          // 有多個點，縮放至涵蓋範圍
+        if (path.length === 1) historyMap.setView(path[0], 17);
+        else
           historyMap.fitBounds(historyPolyline.getBounds(), {
             padding: [20, 20],
           });
-        }
       } else {
-        document.getElementById("routeModalInfo").innerHTML +=
-          "<br>(無路徑資料)";
+        document.getElementById("routeModalInfo").innerHTML += "<br>(無路徑)";
       }
     }, 200);
   } catch (err) {
@@ -368,7 +375,6 @@ async function showRoute(id) {
   }
 }
 
-// 綁定到 window
 window.startMeter = startMeter;
 window.stopMeter = stopMeter;
 window.resetMeter = () => location.reload();
